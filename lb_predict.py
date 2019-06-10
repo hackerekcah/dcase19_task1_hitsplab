@@ -63,13 +63,17 @@ def lb_predict(args):
 
 
 def get_pred(model, loader, device):
+    # model.eval()
     pred = []
-    for x in loader:
-        x = x.to(device)
-        batch_prob = model(x)
-        batch_prob = batch_prob.cpu().detach().numpy()
-        # move to cpu to release gpu prob
-        pred.append(batch_prob)
+    with torch.no_grad():
+        for x in loader:
+            x = x.to(device)
+            batch_prob = model(x)
+            # import torch.nn.functional as F
+            # batch_prob = F.softmax(batch_prob, dim=1)
+            batch_prob = batch_prob.cpu().detach().numpy()
+            # move to cpu to release gpu prob
+            pred.append(batch_prob)
 
     return np.concatenate(pred, 0)
 
@@ -110,7 +114,7 @@ def combine_predict3(args):
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.device)
     device = torch.device('cuda')
 
-    lb_loader1 = LB_Loader(is_divide_variance=True).lb(batch_size=args.batch_size)
+    lb_loader1 = LB_Loader(is_divide_variance=False).lb(batch_size=args.batch_size)
     lb_loader2 = LB_Medfilter_Loader(is_divide_variance=False).lb(batch_size=args.batch_size)
     lb_loader3 = LB_MeanSub_Loader(is_divide_variance=False).lb(batch_size=args.batch_size)
 
@@ -146,18 +150,18 @@ if __name__ == '__main__':
     parser.add_argument('--nb_class', default=10, type=int)
     parser.add_argument('--batch_size', default=16, type=int)
     parser.add_argument('--l2', default=0, type=float)
-    parser.add_argument('--decay', default=1.0, type=float)
+    parser.add_argument('--decay', default=0.8, type=float)
     parser.add_argument('--drop_rate', default=0.3, type=float)
     parser.add_argument('--ckpt_file',
-                        default='ckpt/lb_train_val/Run02,ModifiedXception,Epoch_68,acc_0.748528.tar',
+                        default='ckpt/xcep_mixup/Run01,ModifiedXception,Epoch_38,acc_0.753086.tar',
                         type=str)
     parser.add_argument('--ckpt_file1',
-                        default='ckpt/lb_train_val_medfilter/Run01,ModifiedXception,Epoch_34,acc_0.710351.tar',
+                        default='ckpt/medfilter_xcep_mixup/Run01,ModifiedXception,Epoch_40,acc_0.718708.tar',
                         type=str)
     parser.add_argument('--ckpt_file2',
-                        default='ckpt/lb_train_val_meansub/Run01,ModifiedXception,Epoch_42,acc_0.706933.tar',
+                        default='ckpt/meansub_xcep_mixup/Run01,ModifiedXception,Epoch_38,acc_0.691358.tar',
                         type=str)
-    parser.add_argument('--is_divide_variance', default=True, type=bool)
+    parser.add_argument('--is_divide_variance', default=False, type=bool)
     args = parser.parse_args()
     # lb_predict(args)
     # combine_predict(args)
