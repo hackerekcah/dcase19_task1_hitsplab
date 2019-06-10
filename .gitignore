@@ -1,6 +1,6 @@
 leaderboard_submittions/
 data_manager/data_manager.cfg
-# jupyter_nbs/
+jupyter_nbs/
 ckpt/
 .idea/
 *.png
