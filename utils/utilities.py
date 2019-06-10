@@ -102,6 +102,8 @@ def plot_confusion_matrix(confusion_matrix, title, labels, values):
     Ouputs:
       None
     """
+    import matplotlib.pyplot as plt
+    from matplotlib import ticker
 
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111)
