@@ -127,6 +127,73 @@ class LB_MeanSub_Loader:
                           batch_size=batch_size, shuffle=False, num_workers=3)
 
 
+class Dev_Loader:
+    def __init__(self, is_divide_variance=True):
+        self.is_divide_variance = is_divide_variance
+
+    def train(self, batch_size=128, shuffle=True):
+        return DataLoader(dataset=TrainSet(is_divide_variance=self.is_divide_variance,
+                                           transform=Compose([TripleChanne1(), ToTensor()])),
+                          batch_size=batch_size, shuffle=shuffle, drop_last=True, num_workers=3)
+
+    def val(self, batch_size=128):
+        bc_val_loader = DataLoader(dataset=DeviceWiseValSet(is_divide_variance=self.is_divide_variance, device='bc',
+                                                            transform=Compose([TripleChanne1(), ToTensor()])),
+                                   batch_size=batch_size, shuffle=False, num_workers=3)
+        a_val_loader = DataLoader(dataset=DeviceWiseValSet(is_divide_variance=self.is_divide_variance, device='a',
+                                                            transform=Compose([TripleChanne1(), ToTensor()])),
+                                   batch_size=batch_size, shuffle=False, num_workers=3)
+        val_loader = {'a': a_val_loader, 'bc': bc_val_loader}
+        return val_loader
+
+class Dev_Medfilter_Loader:
+    def __init__(self, is_divide_variance=True):
+        self.is_divide_variance = is_divide_variance
+
+    def train(self, batch_size=128, shuffle=True):
+        return DataLoader(dataset=TrainSet(is_divide_variance=self.is_divide_variance,
+                                           transform=Compose([MedfilterChannel(width=21, height=7, channel_idx=0),
+                                                              TripleChanne1(),
+                                                              ToTensor()])),
+                          batch_size=batch_size, shuffle=shuffle, drop_last=True, num_workers=3)
+
+    def val(self, batch_size=128):
+        a_val_loader = DataLoader(dataset=DeviceWiseValSet(is_divide_variance=self.is_divide_variance, device='a',
+                                                           transform=Compose([MedfilterChannel(width=21, height=7,
+                                                                                               channel_idx=0),
+                                                                              TripleChanne1(), ToTensor()])),
+                                  batch_size=batch_size, shuffle=False, num_workers=3)
+        bc_val_loader = DataLoader(dataset=DeviceWiseValSet(is_divide_variance=self.is_divide_variance, device='bc',
+                                                           transform=Compose([MedfilterChannel(width=21, height=7,
+                                                                                               channel_idx=0),
+                                                                              TripleChanne1(), ToTensor()])),
+                                  batch_size=batch_size, shuffle=False, num_workers=3)
+        return {'a': a_val_loader, 'bc': bc_val_loader}
+
+
+class Dev_MeanSub_Loader:
+    def __init__(self, is_divide_variance=True):
+        self.is_divide_variance = is_divide_variance
+
+    def train(self, batch_size=128, shuffle=True):
+        return DataLoader(dataset=TrainSet(is_divide_variance=self.is_divide_variance,
+                                           transform=Compose([MeanSubtractionChannel(channel_idx=0),
+                                                              TripleChanne1(),
+                                                              ToTensor()])),
+                          batch_size=batch_size, shuffle=shuffle, drop_last=True, num_workers=3)
+
+    def val(self, batch_size=128):
+        a_val_loader = DataLoader(dataset=DeviceWiseValSet(is_divide_variance=self.is_divide_variance, device='a',
+                                                           transform=Compose([MeanSubtractionChannel(channel_idx=0),
+                                                                              TripleChanne1(), ToTensor()])),
+                                  batch_size=batch_size, shuffle=False, num_workers=3)
+        bc_val_loader = DataLoader(dataset=DeviceWiseValSet(is_divide_variance=self.is_divide_variance, device='bc',
+                                                           transform=Compose([MeanSubtractionChannel(channel_idx=0),
+                                                                              TripleChanne1(), ToTensor()])),
+                                  batch_size=batch_size, shuffle=False, num_workers=3)
+        return {'a': a_val_loader, 'bc': bc_val_loader}
+
+
 if __name__ == '__main__':
     loader = LB_Loader()
     dev = loader.train(batch_size=128)
