@@ -1,7 +1,7 @@
 import argparse
 import torch
 import os
-from data_loader.lb_loader import LB_Loader
+from data_loader.lb_loader import Dev_Loader
 import torch.optim as optim
 from torch.optim.lr_scheduler import *
 from engine import *
@@ -25,7 +25,7 @@ def run(args):
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.device)
     device = torch.device('cuda')
 
-    loader = LB_Loader(is_divide_variance=args.is_divide_variance)
+    loader = Dev_Loader(is_divide_variance=args.is_divide_variance)
 
     train_loader = loader.train(batch_size=args.batch_size)
     val_loader = loader.val(batch_size=args.batch_size)
@@ -42,7 +42,11 @@ def run(args):
         scheduler = ReduceLROnPlateau(optimizer, mode='max', verbose=True,
                                       factor=args.lr_factor, patience=args.lr_patience)
 
-    train_hist, val_hist = History(name='train'), History(name='val')
+    train_hist = History(name='train')
+    test_list = ['a', 'bc', 'abc']
+    val_hist = dict()
+    for d in test_list:
+        val_hist[d] = History(name='val/{}'.format(d))
 
     if args.continue_run:
         ckpt_file = Reporter(exp=args.exp).select_last(args.ckpt_prefix[0:5]).selected_ckpt
@@ -71,26 +75,34 @@ def run(args):
             logs=eval_model(train_loader, model, device),
             epoch=epoch
         )
-        val_hist.add(
-            logs=eval_model(val_loader, model, device),
-            epoch=epoch
-        )
+
+        a_logs = eval_model(val_loader['a'], model, device)
+        bc_logs = eval_model(val_loader['bc'], model, device)
+        avg_loss = (a_logs['loss'] + bc_logs['loss']) / 2
+        avg_acc = (a_logs['acc'] + bc_logs['acc']) / 2
+        avg_logs = {'loss': avg_loss, 'acc': avg_acc}
+        val_hist['a'].add(logs=a_logs, epoch=epoch)
+        val_hist['bc'].add(logs=bc_logs, epoch=epoch)
+        val_hist['abc'].add(logs=avg_logs, epoch=epoch)
+
         if args.lr_factor < 1.0:
-            scheduler.step(val_hist.recent['acc'])
+            scheduler.step(val_hist['abc'].recent['acc'])
 
         # plotting
         if args.plot:
             train_hist.clc_plot()
-            val_hist.plot()
+            for d in test_list:
+                val_hist[d].plot()
 
         # logging
         logging.info("Epoch{:04d},{:6},{}".format(epoch, train_hist.name, str(train_hist.recent)))
-        logging.info("Epoch{:04d},{:6},{}".format(epoch, val_hist.name, str(val_hist.recent)))
+        for d in test_list:
+            logging.info("Epoch{:04d},{:6},{}".format(epoch, val_hist[d].name, str(val_hist[d].recent)))
 
-        ckpter.check_on(epoch=epoch, monitor='acc', loss_acc=val_hist.recent)
+        ckpter.check_on(epoch=epoch, monitor='acc', loss_acc=val_hist['abc'].recent)
 
     # explicitly save last
-    ckpter.save(epoch=args.run_epochs-1, monitor='acc', loss_acc=val_hist.recent)
+    ckpter.save(epoch=args.run_epochs-1, monitor='acc', loss_acc=val_hist['abc'].recent)
 
 
 if __name__ == '__main__':
@@ -98,15 +110,15 @@ if __name__ == '__main__':
     parser.add_argument('--exp', default='temp', type=str)
     parser.add_argument('--net', default='ModifiedXception', type=str)
     parser.add_argument('--ckpt_prefix', default='Run01', type=str)
-    parser.add_argument('--device', default='5', type=str)
+    parser.add_argument('--device', default='0', type=str)
     parser.add_argument('--run_epochs', default=10, type=int)
     parser.add_argument('--nb_class', default=10, type=int)
-    parser.add_argument('--batch_size', default=128, type=int)
+    parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--l2', default=0, type=float)
     parser.add_argument('--init_lr', default=3e-4, type=float)
     parser.add_argument('--lr_patience', default=3, type=int)
     parser.add_argument('--lr_factor', default=0.5, type=float)
-    parser.add_argument('--plot', default=False, type=bool)
+    parser.add_argument('--plot', default=True, type=bool)
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--optimizer', default='adam', type=str)
     parser.add_argument('--decay', default=0.998, type=float)
