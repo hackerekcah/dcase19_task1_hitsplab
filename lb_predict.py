@@ -69,8 +69,8 @@ def get_pred(model, loader, device):
         for x in loader:
             x = x.to(device)
             batch_prob = model(x)
-            # import torch.nn.functional as F
-            # batch_prob = F.softmax(batch_prob, dim=1)
+            import torch.nn.functional as F
+            batch_prob = F.softmax(batch_prob, dim=1)
             batch_prob = batch_prob.cpu().detach().numpy()
             # move to cpu to release gpu prob
             pred.append(batch_prob)
@@ -114,7 +114,7 @@ def combine_predict3(args):
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.device)
     device = torch.device('cuda')
 
-    lb_loader1 = LB_Loader(is_divide_variance=False).lb(batch_size=args.batch_size)
+    lb_loader1 = LB_Loader(is_divide_variance=True).lb(batch_size=args.batch_size)
     lb_loader2 = LB_Medfilter_Loader(is_divide_variance=False).lb(batch_size=args.batch_size)
     lb_loader3 = LB_MeanSub_Loader(is_divide_variance=False).lb(batch_size=args.batch_size)
 
@@ -146,20 +146,20 @@ def combine_predict3(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='3', type=str)
+    parser.add_argument('--device', default='2', type=str)
     parser.add_argument('--nb_class', default=10, type=int)
     parser.add_argument('--batch_size', default=16, type=int)
     parser.add_argument('--l2', default=0, type=float)
     parser.add_argument('--decay', default=0.8, type=float)
     parser.add_argument('--drop_rate', default=0.3, type=float)
     parser.add_argument('--ckpt_file',
-                        default='ckpt/xcep_mixup/Run01,ModifiedXception,Epoch_38,acc_0.753086.tar',
+                        default='ckpt/xcep_mixup_val_bc/Run01,ModifiedXception,Epoch_33,acc_0.711634.tar',
                         type=str)
     parser.add_argument('--ckpt_file1',
-                        default='ckpt/medfilter_xcep_mixup/Run01,ModifiedXception,Epoch_40,acc_0.718708.tar',
+                        default='ckpt/medfilter_xcep_mixup_val_bc/Run01,ModifiedXception,Epoch_34,acc_0.680466.tar',
                         type=str)
     parser.add_argument('--ckpt_file2',
-                        default='ckpt/meansub_xcep_mixup/Run01,ModifiedXception,Epoch_38,acc_0.691358.tar',
+                        default='ckpt/meansub_xcep_mixup_val_bc/Run01,ModifiedXception,Epoch_29,acc_0.685439.tar',
                         type=str)
     parser.add_argument('--is_divide_variance', default=False, type=bool)
     args = parser.parse_args()
