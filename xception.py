@@ -299,5 +299,15 @@ class GWRP(nn.Module):
 
 if __name__ == '__main__':
     model = ModifiedXception()
-    out = model(torch.randn(1, 3, 128, 430))
-    print(out.shape)
+    params = list(model.parameters())
+    total_params = 0
+    for i in params:
+        l = 1
+        print('layer structure: ', str(list(i.size())))
+        for j in i.size():
+            l *= j
+        print('layer parameters: ', str(l))
+        total_params += l
+    print('total parameters: ', str(total_params))
+    # out = model(torch.randn(1, 3, 128, 430))
+    # print(out.shape)
