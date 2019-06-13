@@ -54,6 +54,8 @@ def get_pred(model, loader, device):
         for x in loader:
             x = x.to(device)
             batch_prob = model(x)
+            import torch.nn.functional as F
+            batch_prob = F.softmax(batch_prob, dim=1)
             batch_prob = batch_prob.cpu().detach().numpy()
             # move to cpu to release gpu prob
             pred.append(batch_prob)
@@ -129,22 +131,22 @@ def combine_predict3(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='2', type=str)
+    parser.add_argument('--device', default='3', type=str)
     parser.add_argument('--nb_class', default=10, type=int)
     parser.add_argument('--batch_size', default=16, type=int)
     parser.add_argument('--l2', default=0, type=float)
     parser.add_argument('--decay', default=0.8, type=float)
     parser.add_argument('--drop_rate', default=0.3, type=float)
     parser.add_argument('--ckpt_file2',
-                        default='ckpt/meansub_xcep_mixup/Run01,ModifiedXception,Epoch_35,acc_0.688319.tar',
+                        default='ckpt/meansub_xcep_mixup_val_bc/Run01,ModifiedXception,Epoch_29,acc_0.685439.tar',
                         type=str)
     parser.add_argument('--ckpt_file1',
-                        default='ckpt/medfilter_xcep_mixup/Run01,ModifiedXception,Epoch_20,acc_0.712061.tar',
+                        default='ckpt/medfilter_xcep_mixup_val_bc/Run01,ModifiedXception,Epoch_43,acc_0.683154.tar',
                         type=str)
     parser.add_argument('--ckpt_file',
-                        default='ckpt/xcep_mixup/Run01,ModifiedXception,Epoch_33,acc_0.752896.tar',
+                        default='ckpt/xcep_mixup_val_bc/Run01,ModifiedXception,Epoch_33,acc_0.711634.tar',
                         type=str)
-    parser.add_argument('--is_divide_variance', default=False, type=bool)
+    parser.add_argument('--is_divide_variance', default=True, type=bool)
     args = parser.parse_args()
     eva_predict(args)
     # combine_predict(args)
