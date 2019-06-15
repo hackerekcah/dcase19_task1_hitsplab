@@ -1,10 +1,13 @@
 import torch
+import logging
 from data_loader.eva_loader import *
 import argparse
 import os
 import numpy as np
+import sys
 import torch.nn.functional as F
 from utils.utilities import calculate_accuracy, plot_confusion_matrix, calculate_confusion_matrix
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def get_pred_prob(model, loader, device, using_softmax=False):
@@ -46,8 +49,8 @@ def get_class_wise_accuracy(args):
         print('Error. Please choose one of ["normal", "medfilter", "meansub"]')
         return None
 
-    train_loader = loader.train(batch_size=64)
-    val_loader = loader.val(batch_size=64)
+    train_loader = loader.train(batch_size=args.batch_size)
+    val_loader = loader.val(batch_size=args.batch_size)
 
     from xception import ModifiedXception
     model = ModifiedXception(num_classes=args.nb_class, drop_rate=args.drop_rate, decay=args.decay)
@@ -110,15 +113,15 @@ def get_device_wise_accuracy_multi_models(args):
     bc_val_target = []
     for i in range(3):
         model = ModifiedXception(num_classes=args.nb_class, drop_rate=args.drop_rate, decay=args.decay)
-        model.load_state_dict(torch.load(args.ckpt_file)['model_state_dict'])
+        model.load_state_dict(torch.load(os.path.join(ROOT_DIR, args.ckpt_file))['model_state_dict'])
         model.to(device)
         val_pred_prob1 = get_pred_prob(model, loaders[0][i], device)
         model = ModifiedXception(num_classes=args.nb_class, drop_rate=args.drop_rate, decay=args.decay)
-        model.load_state_dict(torch.load(args.ckpt_file1)['model_state_dict'])
+        model.load_state_dict(torch.load(os.path.join(ROOT_DIR, args.ckpt_file1))['model_state_dict'])
         model.to(device)
         val_pred_prob2 = get_pred_prob(model, loaders[1][i], device)
         model = ModifiedXception(num_classes=args.nb_class, drop_rate=args.drop_rate, decay=args.decay)
-        model.load_state_dict(torch.load(args.ckpt_file2)['model_state_dict'])
+        model.load_state_dict(torch.load(os.path.join(ROOT_DIR, args.ckpt_file2))['model_state_dict'])
         model.to(device)
         val_pred_prob3 = get_pred_prob(model, loaders[2][i], device)
         val_pred_prob = val_pred_prob1 + val_pred_prob2 + val_pred_prob3
@@ -167,11 +170,11 @@ def get_device_wise_accuracy(args):
         print('Error. Please choose one of ["normal", "medfilter", "meansub"]')
         return None
 
-    val_loader = loader.val(batch_size=64)
+    val_loader = loader.val(batch_size=args.batch_size)
 
     from xception import ModifiedXception
     model = ModifiedXception(num_classes=args.nb_class, drop_rate=args.drop_rate, decay=args.decay)
-    model.load_state_dict(torch.load(args.ckpt_file)['model_state_dict'])
+    model.load_state_dict(torch.load(os.path.join(ROOT_DIR, args.ckpt_file))['model_state_dict'])
     model.to(device)
 
     labels = ['airport', 'bus', 'metro', 'metro_station', 'park', 'public_square',
@@ -209,6 +212,11 @@ def get_device_wise_accuracy(args):
 
 
 def print_accuracy(args):
+
+    set_acc_logging(args)
+    import pprint
+    logging.info(pprint.pformat(vars(args)) if not isinstance(args, dict) else pprint.pformat(args))
+
     if args.model == 'single':
         val_acc_cw, val_acc = get_device_wise_accuracy(args)
     elif args.model == 'multi':
@@ -218,11 +226,47 @@ def print_accuracy(args):
         return
     device_list = ['device_A', 'device_B', 'device_C', 'Average (B, C)']
     for i in range(4):
-        print('{}:'.format(device_list[i]))
-        print('{} Validation set average accuracy: {:.3f}'.format(device_list[i], val_acc[i]))
-        print('{} Validation set class-wise accuracy:'.format(device_list[i]))
+        logging.info('{}:'.format(device_list[i]))
+        logging.info('{} Validation set average accuracy: {:.3f}'.format(device_list[i], val_acc[i]))
+        logging.info('{} Validation set class-wise accuracy:'.format(device_list[i]))
         for key in val_acc_cw[i].keys():
-            print('{:22s}: {:.3f}'.format(key, val_acc_cw[i][key]))
+            logging.info('{:22s}: {:.3f}'.format(key, val_acc_cw[i][key]))
+
+
+def set_acc_logging(args):
+
+    if args.model == 'single':
+        # acc log file name RunXX.acc, same path as ckpt file
+        log_file = os.path.join(ROOT_DIR, args.ckpt_file.split(',')[0] + '.acc')
+    else:
+        log_file = os.path.join(ROOT_DIR, args.acc_log_file)
+
+    if not os.path.exists(os.path.dirname(log_file)):
+        os.makedirs(os.path.dirname(log_file))
+    elif os.path.exists(log_file):
+        print('acc_log_file:{} already exists, program stop!')
+        sys.exit()
+
+    formatter = logging.Formatter('%(message)s')
+
+    # output to file
+    fileh = logging.FileHandler(log_file, 'a')
+    fileh.setLevel('INFO')
+    fileh.setFormatter(formatter)
+
+    # output to stdout
+    streamh = logging.StreamHandler(sys.stdout)
+    streamh.setLevel('INFO')
+    streamh.setFormatter(formatter)
+
+    log = logging.getLogger()  # root logger
+    log.setLevel('INFO')
+    for hdlr in log.handlers[:]:  # remove all old handlers
+        log.removeHandler(hdlr)
+
+    # set new handler
+    log.addHandler(fileh)
+    log.addHandler(streamh)
 
 
 if __name__ == '__main__':
@@ -234,7 +278,7 @@ if __name__ == '__main__':
     parser.add_argument('--decay', default=1.0, type=float)
     parser.add_argument('--drop_rate', default=0.3, type=float)
     parser.add_argument('--method', default='normal', type=str)
-    parser.add_argument('--model', default='multi', type=str)
+    parser.add_argument('--model', default='single', type=str)
     parser.add_argument('--ckpt_file2',
                         default='ckpt/meansub_xcep_mixup/Run01,ModifiedXception,Epoch_38,acc_0.691358.tar',
                         type=str)
@@ -242,47 +286,13 @@ if __name__ == '__main__':
                         default='ckpt/medfilter_xcep_mixup/Run01,ModifiedXception,Epoch_40,acc_0.718708.tar',
                         type=str)
     parser.add_argument('--ckpt_file',
-                        default='ckpt/xcep_mixup/Run01,ModifiedXception,Epoch_38,acc_0.753086.tar',
+                        default='ckpt/xcep_mixup/Run01,ModifiedXception,Epoch_68,acc_0.748528.tar',
                         type=str)
-    parser.add_argument('--model1_is_divide_variance', default=False, type=bool)
+    parser.add_argument('--model1_is_divide_variance', default=True, type=bool)
     parser.add_argument('--model2_is_divide_variance', default=False, type=bool)
     parser.add_argument('--model3_is_divide_variance', default=False, type=bool)
+
+    parser.add_argument('--acc_log_file', default='submissions/acc/run.acc', type=str)
     args = parser.parse_args()
+
     print_accuracy(args)
-    # test of get_accuracy()
-    # train_acc_cw, val_acc_cw, train_acc, val_acc = get_accuracy(args)
-    # print('=' * 40)
-    # print('Training set average accuracy: ', train_acc)
-    # print('Training set class-wise accuray:')
-    # for key in train_acc_cw.keys():
-    #     print('{:22s}: {:.3f}'.format(key, train_acc_cw[key]))
-    # print('Validation set average accuracy: ', val_acc)
-    # for key in val_acc_cw.keys():
-    #     print('{:22s}: {:.3f}'.format(key, val_acc_cw[key]))
-    # print('=' * 40)
-
-    # test of get_device_accuracy()
-    # val_acc_cw, val_acc = get_device_accuracy(args)
-    # device_list = ['device_A', 'device_B', 'device_C', 'Average (B, C)']
-    # for i in range(4):
-    #     print('{}:'.format(device_list[i]))
-    #     print('{} Validation set average accuracy: {:.3f}'.format(device_list[i], val_acc[i]))
-    #     print('{} Validation set class-wise accuracy:'.format(device_list[i]))
-    #     for key in val_acc_cw[i].keys():
-    #         print('{:22s}: {:.3f}'.format(key, val_acc_cw[i][key]))
-
-    # eva_predict(args)
-    # combine_predict(args)
-    # combine_predict3(args)
-
-    # ===================================================
-
-    # val_acc_cw, val_acc = get_device_accuracy_multi_models(args)
-    # # val_acc_cw, val_acc = get_device_accuracy(args)
-    # device_list = ['device_A', 'device_B', 'device_C', 'Average (B, C)']
-    # for i in range(4):
-    #     print('{}:'.format(device_list[i]))
-    #     print('{} Validation set average accuracy: {:.3f}'.format(device_list[i], val_acc[i]))
-    #     print('{} Validation set class-wise accuracy:'.format(device_list[i]))
-    #     for key in val_acc_cw[i].keys():
-    #         print('{:22s}: {:.3f}'.format(key, val_acc_cw[i][key]))
