@@ -17,7 +17,8 @@ def run(args):
     set_seed(args.seed)
 
     set_logging(ROOT_DIR, args)
-    logging.info(str(args))
+    import pprint
+    logging.info(pprint.pformat(vars(args)) if not isinstance(args, dict) else pprint.pformat(args))
 
     # set up cuda device
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.device)
