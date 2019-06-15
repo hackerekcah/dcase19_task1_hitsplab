@@ -52,10 +52,15 @@ def train_mixup_all(train_loader, model, optimizer, device, mix_alpha=0.1):
         _, y1 = y1.max(dim=1)
         _, y2 = y2.max(dim=1)
 
-        lam = np.random.beta(mix_alpha, mix_alpha, len(x1))
+        if mix_alpha <= 0.0:
+            lam = np.zeros(len(x1))
+        else:
+            lam = np.random.beta(mix_alpha, mix_alpha, len(x1))
+
         lam = torch.from_numpy(lam)
         lam = lam.to(device, dtype=torch.float)
         lamx = lam.view(-1, 1, 1, 1)
+
         mix_x = x1 * lamx + x2 * (1. - lamx)
         logits = model(mix_x)
         criterion = torch.nn.CrossEntropyLoss(reduction='none')
