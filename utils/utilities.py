@@ -64,7 +64,7 @@ def set_logging(root_dir, args):
     fileh = logging.FileHandler(log_file, 'a')
     fileh.setLevel('INFO')
 
-    formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(message)s')
     fileh.setFormatter(formatter)
 
     log = logging.getLogger()  # root logger
