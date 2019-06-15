@@ -1,4 +1,5 @@
-leaderboard_submittions/
+ckpt_bak/
+submissions/
 data_manager/data_manager.cfg
 jupyter_nbs/
 ckpt/
