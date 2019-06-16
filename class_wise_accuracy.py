@@ -44,7 +44,7 @@ def get_class_wise_accuracy(args):
     elif args.method == 'medfilter':
         loader = EVA_Medfilter_Loader(is_divide_variance=args.model2_is_divide_variance)
     elif args.method == 'meansub':
-        loader = EVA_MeanSub_Loader(is_divide_variance=args.model3_is_divicde_variance)
+        loader = EVA_MeanSub_Loader(is_divide_variance=args.model3_is_divide_variance)
     else:
         print('Error. Please choose one of ["normal", "medfilter", "meansub"]')
         return None
@@ -165,7 +165,7 @@ def get_device_wise_accuracy(args):
     elif args.method == 'medfilter':
         loader = Device_Wise_Medfilter_Val_Loader(is_divide_variance=args.model2_is_divide_variance)
     elif args.method == 'meansub':
-        loader = Device_Wise_MeanSub_Val_Loader(is_divide_variance=args.model3_is_divicde_variance)
+        loader = Device_Wise_MeanSub_Val_Loader(is_divide_variance=args.model3_is_divide_variance)
     else:
         print('Error. Please choose one of ["normal", "medfilter", "meansub"]')
         return None
