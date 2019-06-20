@@ -1,24 +1,26 @@
 # dcase19_task1_hitsplab
 Dcase2019 Task1 (Acoustic Scene Classification) Challenge Code.
 
-# Introduction
+# Team & Report
+HIT_SPLAB
 
+"Feature Enhancement For Robust Acoustic Scene Classification With Device Mismatch"
 
 # Install
 * create new env, and install packages in requirements.txt
 ```
 conda create --name <env> --file requirements.txt
 ```
-*if want to run jupyter notebook examples, install a kernelspec for env
+* if want to run jupyter notebook examples, install a kernelspec for env
 ```
 conda install jupyter ipykernel
 python -m ipykernel install --user --name <env> --display-name 'python3.6(<env>)'
 ```
 # data_manager
 * create file data_manager.cfg under data_manager/
-* specify `dev_path` to point to dcase2019 Task1 SubTaskB development dataset
-* specify `lb_path` to point to dcase2019 Task1 SubTaskB leadboard dataset
-* specify `eva_path` to point to dcase2019 Task1 SubTaskB evaluation dataset
+    * specify `dev_path` to point to dcase2019 Task1 SubTaskB development dataset
+    * specify `lb_path` to point to dcase2019 Task1 SubTaskB leadboard dataset
+    * specify `eva_path` to point to dcase2019 Task1 SubTaskB evaluation dataset
 ```
 [DEFAULT]
 
