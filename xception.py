@@ -212,13 +212,13 @@ def xception(pretrained=False, **kwargs):
 
 
 class ModifiedXception(nn.Module):
-    def __init__(self, num_classes=10, drop_rate=0.3, decay=0.998):
+    def __init__(self, num_classes=10, drop_rate=0.3, decay=0.998, pretrained=True):
         super(ModifiedXception, self).__init__()
         self.num_class = num_classes
         kwargs = {
             'decay': decay
         }
-        self.xception = xception(pretrained=True, **kwargs)
+        self.xception = xception(pretrained=pretrained, **kwargs)
         self.drop1 = nn.Dropout(p=drop_rate)
         self.fc1 = nn.Linear(in_features=2048+1024+728, out_features=512)
         self.drop2 = nn.Dropout(p=drop_rate)
